@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/lib/db";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2026-06-24.dahlia" as any, // Using 'as any' to avoid rigid type errors across different versions
-});
+function getStripe() {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("STRIPE_SECRET_KEY is not set");
+  return new Stripe(key);
+}
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +16,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json({ error: "Stripe is not configured. Add STRIPE_SECRET_KEY to environment variables." }, { status: 500 });
+    }
+
     let user = await db.user.findUnique({ where: { email } });
 
     // If no user exists, create a dummy one for the demo
@@ -21,9 +27,7 @@ export async function POST(req: Request) {
       user = await db.user.create({ data: { email, name: email.split("@")[0] } });
     }
 
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return NextResponse.json({ error: "Stripe is not configured." }, { status: 500 });
-    }
+    const stripe = getStripe();
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],

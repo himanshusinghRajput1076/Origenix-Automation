@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { fingerprint, searchGoogleWeb, searchSamGov, searchTed } from "./providers";
 import { scoreLead } from "./scoring";
 import type { DiscoveredLead } from "./types";
+import { qualifyLeadWithAI } from "../ai";
 
 export async function runDiscovery() {
   const searches = await db.savedSearch.findMany({ where: { enabled: true } });
@@ -21,11 +22,30 @@ export async function runDiscovery() {
       const scored = scoreLead(lead);
       if (search.startupFriendlyOnly && scored.score < 20) continue;
       const fp = fingerprint(lead.url, lead.title);
+      
+      const aiResult = await qualifyLeadWithAI(lead.title, lead.description || "", lead.url);
+      
       try {
         await db.lead.upsert({
           where: { fingerprint: fp },
-          create: { ...lead, fingerprint: fp, score: scored.score, scoreReasons: scored.reasons, raw: lead.raw as any },
-          update: { description: lead.description, deadline: lead.deadline, score: scored.score, scoreReasons: scored.reasons, raw: lead.raw as any }
+          create: { 
+            ...lead, 
+            fingerprint: fp, 
+            score: scored.score, 
+            scoreReasons: scored.reasons, 
+            raw: lead.raw as any,
+            aiSummary: aiResult.summary,
+            aiQualification: aiResult.qualification
+          },
+          update: { 
+            description: lead.description, 
+            deadline: lead.deadline, 
+            score: scored.score, 
+            scoreReasons: scored.reasons, 
+            raw: lead.raw as any,
+            aiSummary: aiResult.summary,
+            aiQualification: aiResult.qualification
+          }
         });
         inserted++;
       } catch (e) { errors.push(String(e)); }

@@ -58,14 +58,17 @@ enum SourceType {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  role      String   @default("USER")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  contacts  Contact[]
-  deals     Deal[]
+  id                   String   @id @default(cuid())
+  email                String   @unique
+  name                 String?
+  role                 String   @default("USER")
+  stripeCustomerId     String?  @unique
+  stripeSubscriptionId String?  @unique
+  tier                 String   @default("FREE")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  contacts             Contact[]
+  deals                Deal[]
 }
 
 model Company {
@@ -259,6 +262,8 @@ model Lead {
   serviceTags    String[]
   score          Int      @default(0)
   scoreReasons   String[]
+  aiSummary      String?
+  aiQualification String?
   raw            Json?
   fingerprint    String   @unique
   createdAt      DateTime @default(now())

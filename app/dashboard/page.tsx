@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { Users, Building2, Briefcase, TrendingUp } from "lucide-react";
+import DashboardCharts from "./charts"; // We will create this client component
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,16 @@ export default async function DashboardPage() {
     db.investor.count(),
     db.deal.count()
   ]);
+  
+  // Dummy data for charts
+  const chartData = [
+    { name: "Jan", leads: 40, qualified: 24 },
+    { name: "Feb", leads: 30, qualified: 13 },
+    { name: "Mar", leads: 20, qualified: 98 },
+    { name: "Apr", leads: 27, qualified: 39 },
+    { name: "May", leads: 18, qualified: 48 },
+    { name: "Jun", leads: 23, qualified: 38 },
+  ];
 
   return (
     <div className="p-8">
@@ -23,16 +34,27 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card border rounded-xl p-6 shadow-sm">
+        <div className="bg-card border rounded-xl p-6 shadow-sm flex flex-col">
           <h2 className="text-xl font-semibold mb-4">Pipeline Overview</h2>
-          <div className="h-64 flex items-center justify-center text-muted-foreground bg-muted/50 rounded-lg border border-dashed">
-            Chart Placeholder
+          <div className="flex-1 min-h-[300px]">
+            <DashboardCharts data={chartData} />
           </div>
         </div>
         <div className="bg-card border rounded-xl p-6 shadow-sm">
           <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
           <div className="space-y-4">
-             <div className="text-sm text-muted-foreground">No recent activity.</div>
+             <div className="text-sm text-muted-foreground flex items-center gap-3 py-2 border-b">
+               <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+               AI qualified 3 new leads from SAM.gov
+             </div>
+             <div className="text-sm text-muted-foreground flex items-center gap-3 py-2 border-b">
+               <span className="w-2 h-2 rounded-full bg-green-500"></span>
+               WhatsApp Campaign "Founders Q3" finished sending
+             </div>
+             <div className="text-sm text-muted-foreground flex items-center gap-3 py-2">
+               <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+               New deal moved to Negotiation
+             </div>
           </div>
         </div>
       </div>

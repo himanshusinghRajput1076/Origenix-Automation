@@ -1,0 +1,290 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Channel {
+  WHATSAPP
+  VOICE
+  EMAIL
+}
+
+enum CampaignStatus {
+  DRAFT
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+}
+
+enum DeliveryStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  READ
+  ANSWERED
+  FAILED
+  OPTED_OUT
+  SKIPPED
+}
+
+enum LeadType {
+  CLIENT
+  TENDER
+  PARTNERSHIP
+}
+
+enum LeadStatus {
+  NEW
+  REVIEWING
+  QUALIFIED
+  REJECTED
+  CONTACTED
+  WON
+  LOST
+  EXPIRED
+}
+
+enum SourceType {
+  GOOGLE_WEB
+  TED
+  SAM_GOV
+  RSS
+  MANUAL
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("USER")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  contacts  Contact[]
+  deals     Deal[]
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  industry  String?
+  website   String?
+  size      String?
+  country   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  contacts  Contact[]
+  deals     Deal[]
+}
+
+model Investor {
+  id         String   @id @default(cuid())
+  name       String
+  focus      String?
+  chequeSize String?
+  geography  String?
+  portfolio  String?
+  linkedin   String?
+  email      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deals      Deal[]
+}
+
+model Pipeline {
+  id        String   @id @default(cuid())
+  name      String // Client, Investor, Tender
+  stages    Stage[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Stage {
+  id         String   @id @default(cuid())
+  name       String
+  order      Int
+  pipelineId String
+  pipeline   Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  deals      Deal[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Contact {
+  id            String   @id @default(cuid())
+  name          String?
+  email         String?
+  linkedin      String?
+  phoneE164     String   @unique
+  consent       Boolean  @default(false)
+  consentSource String?
+  consentAt     DateTime?
+  optedOut      Boolean  @default(false)
+  optedOutAt    DateTime?
+  
+  companyId     String?
+  company       Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  ownerId       String?
+  owner         User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deliveries    Delivery[]
+  deals         Deal[]
+  interactions  Interaction[]
+}
+
+model Deal {
+  id          String   @id @default(cuid())
+  title       String
+  value       Float?
+  stageId     String
+  stage       Stage    @relation(fields: [stageId], references: [id], onDelete: Restrict)
+  
+  contactId   String?
+  contact     Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  companyId   String?
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  investorId  String?
+  investor    Investor? @relation(fields: [investorId], references: [id], onDelete: SetNull)
+  tenderId    String?
+  ownerId     String?
+  owner       User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  interactions Interaction[]
+}
+
+model Interaction {
+  id        String   @id @default(cuid())
+  type      String   // CALL, EMAIL, WHATSAPP, NOTE, MEETING
+  content   String?
+  
+  dealId    String?
+  deal      Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+}
+
+model Campaign {
+  id                String   @id @default(cuid())
+  name              String
+  channel           Channel
+  status            CampaignStatus @default(DRAFT)
+  templateName      String?
+  templateLanguage  String? @default("en")
+  templateVariables Json?
+  voiceMessage      String?
+  createdAt         DateTime @default(now())
+  startedAt         DateTime?
+  completedAt       DateTime?
+  deliveries        Delivery[]
+}
+
+model Delivery {
+  id           String   @id @default(cuid())
+  campaignId   String
+  contactId    String
+  providerId   String?
+  status       DeliveryStatus @default(QUEUED)
+  errorMessage String?
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  campaign     Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact      Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  
+  @@unique([campaignId, contactId])
+  @@index([providerId])
+}
+
+model DiscoverySource {
+  id          String   @id @default(cuid())
+  name        String
+  type        SourceType
+  enabled     Boolean  @default(true)
+  baseUrl     String?
+  config      Json?
+  lastRunAt   DateTime?
+  lastError   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  leads       Lead[]
+}
+
+model SavedSearch {
+  id                  String   @id @default(cuid())
+  name                String
+  query               String
+  countries           String[]
+  serviceTags         String[]
+  minBudget           Float?
+  maxBudget           Float?
+  startupFriendlyOnly Boolean  @default(true)
+  enabled             Boolean  @default(true)
+  lastRunAt           DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Lead {
+  id             String   @id @default(cuid())
+  sourceId       String?
+  externalId     String?
+  type           LeadType
+  status         LeadStatus @default(NEW)
+  title          String
+  organization   String?
+  country        String?
+  city           String?
+  url            String
+  description    String?
+  publishedAt    DateTime?
+  deadline       DateTime?
+  budgetMin      Float?
+  budgetMax      Float?
+  currency       String?
+  contactName    String?
+  contactEmail   String?
+  contactPhone   String?
+  serviceTags    String[]
+  score          Int      @default(0)
+  scoreReasons   String[]
+  raw            Json?
+  fingerprint    String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  source         DiscoverySource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  notes          LeadNote[]
+  
+  @@index([status, score])
+  @@index([deadline])
+  @@index([country])
+}
+
+model LeadNote {
+  id        String   @id @default(cuid())
+  leadId    String
+  body      String
+  createdAt DateTime @default(now())
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+}

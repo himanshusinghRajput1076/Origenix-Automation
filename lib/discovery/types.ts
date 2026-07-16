@@ -1,0 +1,20 @@
+export type DiscoveredLead = {
+  externalId?: string;
+  type: "CLIENT" | "TENDER" | "PARTNERSHIP";
+  title: string;
+  organization?: string;
+  country?: string;
+  city?: string;
+  url: string;
+  description?: string;
+  publishedAt?: Date;
+  deadline?: Date;
+  budgetMin?: number;
+  budgetMax?: number;
+  currency?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  serviceTags: string[];
+  raw?: unknown;
+};

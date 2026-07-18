@@ -1,12 +1,5 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { db } from "@/lib/db";
-
-function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY is not set");
-  return new Stripe(key);
-}
 
 export async function POST(req: Request) {
   try {
@@ -27,7 +20,8 @@ export async function POST(req: Request) {
       user = await db.user.create({ data: { email, name: email.split("@")[0] } });
     }
 
-    const stripe = getStripe();
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],

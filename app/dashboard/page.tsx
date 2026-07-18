@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { Users, Building2, Briefcase, TrendingUp } from "lucide-react";
-import DashboardCharts from "./charts"; // We will create this client component
+import ChartsWrapper from "./charts-wrapper";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +37,7 @@ export default async function DashboardPage() {
         <div className="bg-card border rounded-xl p-6 shadow-sm flex flex-col">
           <h2 className="text-xl font-semibold mb-4">Pipeline Overview</h2>
           <div className="flex-1 min-h-[300px]">
-            <DashboardCharts data={chartData} />
+            <ChartsWrapper data={chartData} />
           </div>
         </div>
         <div className="bg-card border rounded-xl p-6 shadow-sm">
@@ -49,7 +49,7 @@ export default async function DashboardPage() {
              </div>
              <div className="text-sm text-muted-foreground flex items-center gap-3 py-2 border-b">
                <span className="w-2 h-2 rounded-full bg-green-500"></span>
-               WhatsApp Campaign "Founders Q3" finished sending
+               WhatsApp Campaign &quot;Founders Q3&quot; finished sending
              </div>
              <div className="text-sm text-muted-foreground flex items-center gap-3 py-2">
                <span className="w-2 h-2 rounded-full bg-amber-500"></span>

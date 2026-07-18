@@ -1,23 +1,18 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { db } from "@/lib/db";
-
-function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY is not set");
-  return new Stripe(key);
-}
 
 export async function POST(req: Request) {
   if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
     return NextResponse.json({ error: "Stripe is not configured." }, { status: 500 });
   }
 
-  const stripe = getStripe();
+  const Stripe = (await import("stripe")).default;
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
   const body = await req.text();
   const signature = req.headers.get("stripe-signature") as string;
 
-  let event: Stripe.Event;
+  let event: any;
 
   try {
     event = stripe.webhooks.constructEvent(
@@ -29,7 +24,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Webhook Error: ${error.message}` }, { status: 400 });
   }
 
-  const session = event.data.object as Stripe.Checkout.Session;
+  const session = event.data.object;
 
   try {
     if (event.type === "checkout.session.completed") {
